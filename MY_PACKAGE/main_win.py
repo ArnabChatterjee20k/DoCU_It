@@ -2,7 +2,9 @@ from tkinter import *
 from tkinter import ttk,messagebox,colorchooser
 from PIL import Image,ImageTk
 import threading as td
-from project_parser import Parser
+from MY_PACKAGE.project_parser import Parser#when calling this whole main_win as a module
+# from project_parser import Parser #when we will use this main_win as an application
+
 
 class LogIn(Tk):
     max_height=1500
@@ -24,7 +26,7 @@ class LogIn(Tk):
         self.search_var=StringVar()
 
         # Image frame
-        self.img=Image.open("Images/icon.ico")
+        self.img=Image.open("MY_PACKAGE\Images\icon.ico")
         self.img=self.img.resize((200,200))
         self.img=ImageTk.PhotoImage(self.img)
         self.img_frame=Frame(self)
@@ -46,7 +48,7 @@ class LogIn(Tk):
         self.tab.add(self.automate,text="Automate")
         self.tab.add(self.upload,text="Upload")
 
-        self.api_img=ImageTk.PhotoImage(Image.open("Images/internet.png"))
+        self.api_img=ImageTk.PhotoImage(Image.open("MY_PACKAGE\Images\internet.png"))
         Label(self.automate,image=self.api_img,bg=self.primary_color).pack()
         Label(self.automate,text="DoCu_IT",font=("Microsoft JhengHei UI Light","24","bold"),bg=self.primary_color,fg="#F0A500").pack(pady=(10,0))
         Label(self.automate,text="You search,Arnab Chatterjee will automate",font=("Microsoft JhengHei UI Light","15","bold"),bg=self.primary_color,fg="#F0A500").pack(pady=(4,0))
@@ -56,7 +58,7 @@ class LogIn(Tk):
 
         self.search_bar=ttk.Entry(self.search,width=37,font=("Courier","18"),textvariable=self.search_var)
         self.search_bar.pack(side=LEFT)
-        self.search_ico=ImageTk.PhotoImage(Image.open("Images/search.png"))
+        self.search_ico=ImageTk.PhotoImage(Image.open("MY_PACKAGE\Images\search.png"))
 
         self.search_btn=ttk.Button(self.search,image=self.search_ico,command=self.search_project)
         self.search_btn.pack(side=LEFT)
@@ -165,10 +167,10 @@ class LogIn(Tk):
     
         
 
-a=LogIn()
+# a=LogIn()
 # style=ttk.Style()
 # style.theme_use('alt')
 # print(style.theme_names())
-a.mainloop()
+# a.mainloop()
 # print(a.project_data)
 # print(a.color_choice)
