@@ -2,11 +2,11 @@ from tkinter import *
 from tkinter import ttk,messagebox,colorchooser
 from PIL import Image,ImageTk
 import threading as td
-from MY_PACKAGE.project_parser import Parser#when calling this whole main_win as a module
-# from project_parser import Parser #when we will use this main_win as an application
+# from MY_PACKAGE.project_parser import Parser#when calling this whole main_win as a module
+from project_parser import Parser #when we will use this main_win as an application
 
 
-class LogIn(Tk):
+class LogIn(Toplevel):
     max_height=1500
     max_width=700
     primary_color="#091353"
@@ -20,7 +20,8 @@ class LogIn(Tk):
         self.proj_title=None
         self.count_paras=0
         self.not_blank_position=0
-        self.project_data=None
+        self.project_data_encoded=None
+        self.docx_save=None
         self.color_choice=["black"]*5
         # text var
         self.search_var=StringVar()
@@ -30,7 +31,8 @@ class LogIn(Tk):
         self.img=self.img.resize((200,200))
         self.img=ImageTk.PhotoImage(self.img)
         self.img_frame=Frame(self)
-        Label(self.img_frame,image=self.img,text="Project Automation",compound=TOP,font=("Microsoft JhengHei UI Light","16")).pack()
+        self.img_label=Label(self.img_frame,image=self.img,text="Project Automation",compound=TOP,font=("Microsoft JhengHei UI Light","16"))
+        self.img_label.pack()
         self.img_frame.pack(side=LEFT,ipadx=10)
 
         
@@ -48,7 +50,8 @@ class LogIn(Tk):
         self.tab.add(self.automate,text="Automate")
         self.tab.add(self.upload,text="Upload")
 
-        self.api_img=ImageTk.PhotoImage(Image.open("MY_PACKAGE\Images\internet.png"))
+        self.api_img1=Image.open("MY_PACKAGE\Images\internet.png")
+        self.api_img=ImageTk.PhotoImage(self.api_img1)
         Label(self.automate,image=self.api_img,bg=self.primary_color).pack()
         Label(self.automate,text="DoCu_IT",font=("Microsoft JhengHei UI Light","24","bold"),bg=self.primary_color,fg="#F0A500").pack(pady=(10,0))
         Label(self.automate,text="You search,Arnab Chatterjee will automate",font=("Microsoft JhengHei UI Light","15","bold"),bg=self.primary_color,fg="#F0A500").pack(pady=(4,0))
@@ -67,7 +70,7 @@ class LogIn(Tk):
         self.btn_frame=Frame(self.automate,bg=self.primary_color)
         self.btn_frame.pack()
         
-        self.automate_btn=ttk.Button(self.btn_frame,text="Automate")
+        self.automate_btn=ttk.Button(self.btn_frame,text="Automate",command=self.save_project)
         self.automate_btn.pack(side=LEFT,padx=(0,7))
         
         self.overview=ttk.Button(self.btn_frame,text="Overview",command=self.open_modal)
@@ -79,33 +82,45 @@ class LogIn(Tk):
 
     def search_project_initialiser(self,var):
         project_to_be_automated=var.get().strip()
-        if project_to_be_automated!="":
-            self.proj_title=project_to_be_automated
-            project=Parser(project_to_be_automated)
-            project.parse()
-            self.project_data=project.collection_paragraphs
-            # print(self.project_data)
-            # print(project)
-            for i in range(len(self.project_data)):
-                if self.project_data[i].strip()!="":
-                    break
-            self.not_blank_position=i
-            
-            messagebox.showinfo("DOCu-It","Your project data is ready")
-            self.count_paras=project.project_paras
-            self.any_project=True
-            for child in self.btn_frame.winfo_children():
-                child["state"]="normal"
-            self.btn_frame.update()
-            
-        else:
-            messagebox.showinfo("DOCu-It","Please enter the project name")
+        try:
+            if project_to_be_automated!="":
+                self.proj_title=project_to_be_automated
+                thread=td.Thread(target=lambda:messagebox.showinfo("DOCu-It","Getting connected"),daemon=True)
+                thread.start()
+                project=Parser(project_to_be_automated)
+                project.parse()
+                self.project_data_encoded=project.collection_paragraphs
+                self.docx_save=project.para_to_be_docxed
+                # print(self.project_data_encoded)
+                # print(project)
+                for i in range(len(self.project_data_encoded)):
+                    if self.project_data_encoded[i].strip()!="":
+                        break
+                self.not_blank_position=i
+                self.proj_title=project_to_be_automated
+                messagebox.showinfo("DOCu-It","Your project data is ready.\nClick automate to save.\nClick overview to make changes")
+                self.count_paras=project.project_paras
+                self.any_project=True
+                for child in self.btn_frame.winfo_children():
+                    child["state"]="normal"
+                self.btn_frame.update()
+                
+            else:
+                messagebox.showerror("DOCu-It","Please enter the project name")
+        except:
+            messagebox.showerror("DOCu-It"," Network issuue")
     def search_project(self):
         """for search button. Thread has been used to conduct this process parallely and the window does not get irresponsive"""
         thread=td.Thread(target=self.search_project_initialiser,args=(self.search_var,))
         thread.daemon=True
         thread.start()
 
+    def save_project(self):
+        try:
+            Parser.save_docx(self.proj_title,collection_paragraphs=self.docx_save)
+            messagebox.showinfo(self.title,f"Saved {self.proj_title}.docx")
+        except:
+            messagebox.showerror(self.title,f"Fail to save {self.proj_title}.docx")
     def open_modal(self):
         def color_change(btn,button_index):
             selected_color = colorchooser.askcolor()[1]
@@ -115,17 +130,26 @@ class LogIn(Tk):
         def view_para():
             para_number=int(para_count.get())-1
             project_display.delete("1.0",END)
-            project_display.insert(INSERT,self.project_data[para_number])
+            project_display.insert(INSERT,self.project_data_encoded[para_number])
             project_display.update()
+        
+        def save():
+            current_change=project_display.get("1.0",END)
+            current_index=int(para_count.get())-1
+            self.project_data_encoded[current_index]=current_change
+            self.docx_save[current_index]=current_change
+            messagebox.showerror("DOCu-It","current para changed")
+            
 
         modal=Toplevel(self)
         modal.title(f"DOCu-It--Overview of ({self.proj_title})")
         modal.geometry("700x288")
         modal.resizable(0,0)
+        Label(modal,fg="red",text="Some symbols are meant for encoding.They will be alright in docx.").pack()
         project_display=Text(modal,width=40,height=17,relief=SUNKEN,bd=2,wrap=WORD,font=("10"),spacing2=5)
         project_display.pack(side=LEFT,pady=3,padx=4,anchor=N)
 
-        project_display.insert(INSERT,self.project_data[self.not_blank_position])
+        project_display.insert(INSERT,self.project_data_encoded[self.not_blank_position])
 
         options_frame=Frame(modal,width=60,height=17,relief=SUNKEN,bd=2)
         options_frame.pack(anchor=CENTER,pady=20)
@@ -161,16 +185,19 @@ class LogIn(Tk):
             i["padx"]="2"
             i["pady"]="2"
             i["bg"]="black"
-            
+        
+        save_btn=ttk.Button(options_frame,text="SAVE",command=save)
+        save_btn.grid(row=2)
         
 
     
         
-
-# a=LogIn()
-# style=ttk.Style()
-# style.theme_use('alt')
-# print(style.theme_names())
-# a.mainloop()
-# print(a.project_data)
-# print(a.color_choice)
+if __name__=="__main__":##to execute the file when it will be running as program not as a module 
+    a=LogIn()
+    # style=ttk.Style()
+    # style.theme_use('alt')
+    # print(style.theme_names())
+    a.mainloop()
+    # print(a.project_data_encoded)
+    # print(a.color_choice)
+    print(a.proj_title)

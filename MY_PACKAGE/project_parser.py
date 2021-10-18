@@ -1,6 +1,6 @@
 import requests 
 from bs4 import BeautifulSoup
-from docx import Document
+from docx import Document,shared
 class Parser:
     source_link="https://en.wikipedia.org/wiki/"
     def __init__(self,project_topic):
@@ -8,6 +8,7 @@ class Parser:
         self.project_paras=0
         self.completed=None
         self.collection_paragraphs=None#it will contain the whole data
+        self.para_to_be_docxed=[]
 
     def parse(self):
         response=requests.get(Parser.source_link+self.project_topic)
@@ -28,6 +29,7 @@ class Parser:
         parsed_pragraphs="" #to store parsed paragraphs
         number_of_para=0 #to count number of para
         para_list=[]#it will contain a list of all paragrahs stored in different tuples
+        saving_list=[]
         html_para=body.find_all("p")
         
         for para in html_para:
@@ -35,6 +37,7 @@ class Parser:
             number_of_para+=1
             parsed_pragraphs+=para.text
             para_list_pointer+=para.text
+            saving_list.append(para_list_pointer)
             para_list_pointer=para_list_pointer.encode("utf-8","ignore")
             para_list.append((para_list_pointer))
             para_list_pointer=""
@@ -42,24 +45,28 @@ class Parser:
         self.project_paras=number_of_para
         self.completed=parsed_pragraphs
         self.collection_paragraphs=para_list
-
-    def save_docx(self,file):
+        self.para_to_be_docxed=saving_list
+    @staticmethod
+    def save_docx(file,collection_paragraphs):
         # with open(f"{file}.docx","w") as f:#saving in docx mode will not cause any problem of encoding
         #     f.write(self.completed)
         document = Document()
         document.add_heading('Document Title', 0)
-        for i in self.collection_paragraphs:
+        for i in collection_paragraphs:
             document.add_paragraph(str(i), style='Intense Quote')
         document.save(f'{file}.docx')
+    @staticmethod
     def save_txt(self,file):
         with open(f"{file}.txt","w") as f:
             f.write(self.completed)
     def __repr__(self) :
         return(str(self.completed.encode("utf-8","ignore")))                
-# obj1=Parser("data")
-# obj1.parse()
-# for i in obj1.collection_paragraphs[:4]:
-#     print(i)
-# obj1.save("text.text")
 
+if __name__=="__main__":##to execute the file when it will be running as program not as a module 
+    obj1=Parser("data")
+    obj1.parse()
+    for i in obj1.collection_paragraphs[:4]:
+        print(i)
+    # obj1.save("text.text")
+    obj1.save_docx("data",obj1.para_to_be_docxed)
 

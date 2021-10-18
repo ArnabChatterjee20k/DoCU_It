@@ -1,16 +1,18 @@
 from MY_PACKAGE.main_win import LogIn
 from tkinter import *
-from tkinter import ttk
-from tkinter import font
+from tkinter import ttk,messagebox
 from PIL import ImageTk,Image
 from functools import partial
+import requests,threading
 # import os
-
-# import MY_PACKAGE
-
 # os.startfile("server.py")#for starting the backend server
 window=Tk()
+title="DoCu_It"
+window.title(title)
 
+# server link
+server_link_register="http://127.0.0.1:5000/register"
+server_link_login="http://127.0.0.1:5000/login"
 
 # text variables
 email=StringVar()
@@ -18,7 +20,10 @@ password=StringVar()
 email_reg=StringVar()
 password_reg=StringVar()
 
-place_holder={"email":"Enter your email","password":"Enter your password"}
+email_placeholder="Enter your email"
+password_placeholder="Enter your password"
+
+place_holder={"email":email_placeholder,"password":password_placeholder}
 #functions for buttons
 def toggle_pass(entry_var,button):
     """to show/hide pass"""
@@ -51,10 +56,69 @@ def focus_in(place_hold_name=None,entry_var=None,button=None,textvar=None):
         if entry_var.get().strip()==place_holder[f"{place_hold_name}"]:
             entry_var.set("")
 
-def login():
-    pass
-    # win=LOGIN()
-    # win.mainloop()
+restrict=0#to restrict the number of windows
+def login_init():
+    global restrict
+    def on_close():
+        """to restrict the number of automate window opened"""
+        global restrict
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            restrict=0
+            main.destroy()
+    data={
+        "email":email.get().strip(),
+        "password":password.get().strip()
+    }
+    # cross checking
+    if (data["email"]=="" or data["email"]==email_placeholder) or (data["password"]=="" or data["password"]==password_placeholder):
+        messagebox.showerror("DoCu_It","plz fill the details")
+    else:
+        try:
+            # sending data to server database
+            response=requests.post(url=server_link_login,data=data)
+            status=response.json()
+            email.set(email_placeholder)
+            password.set(password_placeholder)
+            messagebox.showinfo("DoCu_It",status["message"])
+            if status.get("user") and restrict==0:#as it does not stop the code if key not found
+                try:
+                    main=LogIn()
+                    window.wm_state('iconic')
+                    main.protocol("WM_DELETE_WINDOW",on_close)
+                    main.mainloop()
+                except:
+                    pass
+            elif restrict==1:
+                messagebox.showwarning(title,"At a time only window can be opened")
+        except:
+            messagebox.showerror("DOCu-It","Server connection not established")
+def regester_init():
+    data={
+        "email":email_reg.get().strip(),
+        "password":password_reg.get().strip()
+    }
+    # cross checking
+    if (data["email"]=="" or data["email"]==email_placeholder) or (data["password"]=="" or data["password"]==password_placeholder):
+        messagebox.showerror("DoCu_It","plz fill the details")
+    
+    else:
+        try:
+            response=requests.post(url=server_link_register,data=data)
+            status=response.json()
+            print(status)
+            email_reg.set(email_placeholder)
+            password_reg.set(password_placeholder)
+            messagebox.showinfo("DoCu_It",status["message"])
+        except:
+            messagebox.showerror("DOCu-It","Server connection not established")
+
+def process(funcname):
+    '''SO that window doesnot crashes while registering or login'''
+    thread=threading.Thread(target=funcname)
+    thread.daemon=True
+    thread.start()
+
+
 # colors
 primary_color="#091353"#dark_blue
 
@@ -112,7 +176,8 @@ password.set(place_holder["password"])
 password_entry.bind("<FocusIn>",lambda e:focus_in(textvar=password,entry_var=None,button=show_pass))#since evnts returns an event obejct so e 
 password_entry.bind("<FocusOut>",lambda e:focus_out(textvar=password,entry_var=None,button=show_pass))
 
-submit=ttk.Button(login_tab,text="LOG IN",command=login)
+submit=ttk.Button(login_tab,text="LOG IN",command=partial(process,login_init))
+
 submit.pack(pady=40)
 
 
@@ -145,7 +210,7 @@ password_reg.set(place_holder["password"])
 password_registry.bind("<FocusIn>",lambda e:focus_in(textvar=password_reg,entry_var=None,button=show_pass_reg))
 password_registry.bind("<FocusOut>",lambda e:focus_out(textvar=password_reg,entry_var=None,button=show_pass_reg))
 
-register=ttk.Button(register_tab,text="Register",command=quit)
+register=ttk.Button(register_tab,text="Register",command=partial(process,regester_init))
 register.pack(pady=40)
 
 
