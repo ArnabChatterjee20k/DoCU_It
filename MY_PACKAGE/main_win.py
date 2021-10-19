@@ -22,7 +22,7 @@ class LogIn(Toplevel):
         self.not_blank_position=0
         self.project_data_encoded=None
         self.docx_save=None
-        self.color_choice=["black"]*5
+        self.color_choice=["000000"]*5
         # text var
         self.search_var=StringVar()
 
@@ -80,6 +80,9 @@ class LogIn(Toplevel):
             if self.any_project==False:
                 child["state"]="disabled"
 
+
+        # upload/download section
+        
     def search_project_initialiser(self,var):
         project_to_be_automated=var.get().strip()
         try:
@@ -117,16 +120,17 @@ class LogIn(Toplevel):
 
     def save_project(self):
         try:
-            Parser.save_docx(self.proj_title,collection_paragraphs=self.docx_save)
+            Parser.save_docx(self.proj_title,collection_paragraphs=self.docx_save,colors=self.color_choice)
             messagebox.showinfo(self.title,f"Saved {self.proj_title}.docx")
-        except:
+        except Exception as e:
             messagebox.showerror(self.title,f"Fail to save {self.proj_title}.docx")
+            print(e)
+
     def open_modal(self):
         def color_change(btn,button_index):
             selected_color = colorchooser.askcolor()[1]
             btn["bg"]=selected_color
-            self.color_choice[button_index]=selected_color
-
+            self.color_choice[button_index]=selected_color.strip("#")
         def view_para():
             para_number=int(para_count.get())-1
             project_display.delete("1.0",END)
@@ -138,7 +142,7 @@ class LogIn(Toplevel):
             current_index=int(para_count.get())-1
             self.project_data_encoded[current_index]=current_change
             self.docx_save[current_index]=current_change
-            messagebox.showerror("DOCu-It","current para changed")
+            messagebox.showwarning("DOCu-It","current para changed")
             
 
         modal=Toplevel(self)
@@ -162,7 +166,7 @@ class LogIn(Toplevel):
         para_count.pack()
 
         para_count.bind("<Button-1>",lambda e:view_para())
-        color=LabelFrame(options_frame,text="COLOR")
+        color=LabelFrame(options_frame,text="Choose Colors")
         color.grid(row=1,ipadx=3,padx=10)
 
         color_1=Button(color,width=2,height=1,command=lambda:color_change(color_1,0))
@@ -199,5 +203,5 @@ if __name__=="__main__":##to execute the file when it will be running as program
     # print(style.theme_names())
     a.mainloop()
     # print(a.project_data_encoded)
-    # print(a.color_choice)
-    print(a.proj_title)
+    print(a.color_choice)
+    # print(a.proj_title)

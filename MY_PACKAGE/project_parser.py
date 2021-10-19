@@ -1,6 +1,7 @@
 import requests 
 from bs4 import BeautifulSoup
-from docx import Document,shared
+from docx import Document
+from docx.shared import Pt, RGBColor 
 class Parser:
     source_link="https://en.wikipedia.org/wiki/"
     def __init__(self,project_topic):
@@ -46,15 +47,28 @@ class Parser:
         self.completed=parsed_pragraphs
         self.collection_paragraphs=para_list
         self.para_to_be_docxed=saving_list
+
     @staticmethod
-    def save_docx(file,collection_paragraphs):
-        # with open(f"{file}.docx","w") as f:#saving in docx mode will not cause any problem of encoding
-        #     f.write(self.completed)
+    def save_docx(file,collection_paragraphs,colors=[]):
+        file=file.upper()
         document = Document()
-        document.add_heading('Document Title', 0)
+        document.add_heading(file, 0)
+        color_count=0
+        if len(colors)==0:
+            colors=["000000"]# #000000 should be 000000 and it means black
+    
         for i in collection_paragraphs:
-            document.add_paragraph(str(i), style='Intense Quote')
-        document.save(f'{file}.docx')
+            if i.strip()=="":
+                continue
+            else:
+                color_count+=1
+                if color_count>(len(colors)-1):
+                    color_count=0
+                para=document.add_paragraph().add_run(str(i))
+                para.font.color.rgb = RGBColor.from_string(colors[color_count])
+                para.font.size=Pt(12)
+        document.save(f'Your Projects/{file}.docx')
+        
     @staticmethod
     def save_txt(self,file):
         with open(f"{file}.txt","w") as f:
@@ -63,10 +77,8 @@ class Parser:
         return(str(self.completed.encode("utf-8","ignore")))                
 
 if __name__=="__main__":##to execute the file when it will be running as program not as a module 
-    obj1=Parser("data")
+    obj1=Parser("cricket")
     obj1.parse()
-    for i in obj1.collection_paragraphs[:4]:
-        print(i)
     # obj1.save("text.text")
-    obj1.save_docx("data",obj1.para_to_be_docxed)
+    obj1.save_docx("cricket",obj1.para_to_be_docxed,colors=['0000a0', '000000', 'ff0080', '000000', '400080'])
 

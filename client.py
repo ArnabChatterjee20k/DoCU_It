@@ -83,6 +83,7 @@ def login_init():
             if status.get("user") and restrict==0:#as it does not stop the code if key not found
                 try:
                     main=LogIn()
+                    restrict=1
                     window.wm_state('iconic')
                     main.protocol("WM_DELETE_WINDOW",on_close)
                     main.mainloop()
@@ -105,7 +106,7 @@ def regester_init():
         try:
             response=requests.post(url=server_link_register,data=data)
             status=response.json()
-            print(status)
+            # print(status)
             email_reg.set(email_placeholder)
             password_reg.set(password_placeholder)
             messagebox.showinfo("DoCu_It",status["message"])

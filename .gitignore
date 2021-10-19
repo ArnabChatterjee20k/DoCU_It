@@ -1,6 +1,9 @@
 MY_PACKAGE/__pycache__
+Your Projects/
+__pycache__/
 MY_PACKAGE/login_support.py
 MY_PACKAGE/new.py
 arnab.docx
 DOCu_It.db
-server_testing/
+server_testing
+

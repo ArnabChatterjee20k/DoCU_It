@@ -1,12 +1,12 @@
 import re
-from flask import Flask,request,jsonify
+from flask import Flask,request,jsonify,send_file
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import backref
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+from io import BytesIO
 app=Flask(__name__)
-# DATABASE
-DB_NAME="DOCu_It.db"
+# DATABASE configurations
+DB_NAME="DATABASE\DOCu_It.db"
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db=SQLAlchemy(app)
@@ -20,7 +20,8 @@ class User(db.Model):
 
 class ProjectFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name=db.Column(db.String(100))
+    filename=db.Column(db.String(100))
+    file=db.Column(db.LargeBinary)
     person_email = db.Column(db.String(100),db.ForeignKey("user.email"))
 
 # since we have to send serializable object so this will help us.
@@ -53,6 +54,23 @@ def login():
             return {"message":"Password Not Matching"},409
     else:
         return {"message":"User not found"},404
+
+
+@app.route("/upload",methods=["POST"])
+def upload():
+    file=request.files["upload"]
+    name=request.form["email"]
+    new_file=ProjectFile(filename=file.filename,file=file.read(),person_email=name)
+    db.session.add(new_file)
+    db.session.commit()
+    return "done",201
+@app.route("/download",methods=["POST"])
+def download():
+    user=request.form["email"]
+    request_file=request.form["file"]
+    user_file = ProjectFile.query.filter_by(person_email=user,filename=request_file).first()
+    if user_file:
+        return send_file(BytesIO(user_file.file),attachment_filename="flask.docx")
 if __name__=="__main__":
     db.create_all()
     app.run(debug=True)
