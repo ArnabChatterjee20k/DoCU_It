@@ -60,17 +60,24 @@ def login():
 def upload():
     file=request.files["upload"]
     name=request.form["email"]
-    new_file=ProjectFile(filename=file.filename,file=file.read(),person_email=name)
-    db.session.add(new_file)
-    db.session.commit()
-    return "done",201
+    auth=ProjectFile.query.filter_by(filename=file.filename,person_email=name).first()
+    if auth:
+        return "Already Present",409
+    else:
+        new_file=ProjectFile(filename=file.filename,file=file.read(),person_email=name)
+        db.session.add(new_file)
+        db.session.commit()
+        return "done",201
+
 @app.route("/download",methods=["POST"])
 def download():
     user=request.form["email"]
     request_file=request.form["file"]
     user_file = ProjectFile.query.filter_by(person_email=user,filename=request_file).first()
     if user_file:
-        return send_file(BytesIO(user_file.file),attachment_filename="flask.docx")
+        return send_file(BytesIO(user_file.file),attachment_filename=user_file.filename)
+    else:
+        return "not found",404
 if __name__=="__main__":
     db.create_all()
     app.run(debug=True)

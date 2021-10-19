@@ -1,7 +1,8 @@
 from tkinter import *
-from tkinter import ttk,messagebox,colorchooser
+from tkinter import ttk,messagebox,colorchooser,filedialog
 from PIL import Image,ImageTk
 import threading as td
+import requests
 # from MY_PACKAGE.project_parser import Parser#when calling this whole main_win as a module
 from project_parser import Parser #when we will use this main_win as an application
 
@@ -10,12 +11,13 @@ class LogIn(Toplevel):
     max_height=1500
     max_width=700
     primary_color="#091353"
-    def __init__(self):
+    def __init__(self,email=None):
         super().__init__()
+        self.email=email#for verfication and connecting to server
         self.geometry(f"{self.max_height}x{self.max_width}")
         self.title("DOCU_It")
         self.resizable(0,0)
-        self.any_project=False#needs to be false
+        self.any_project=False#needs to be false. Used for enabling options and disabling options if nothing project is searched
         # self.any_project=True#needs to be false
         self.proj_title=None
         self.count_paras=0
@@ -25,6 +27,7 @@ class LogIn(Toplevel):
         self.color_choice=["000000"]*5
         # text var
         self.search_var=StringVar()
+        self.upload_var=StringVar()
 
         # Image frame
         self.img=Image.open("MY_PACKAGE\Images\icon.ico")
@@ -82,7 +85,46 @@ class LogIn(Toplevel):
 
 
         # upload/download section
+        self.rocket= Image.open(r'MY_PACKAGE\Images\rocket.png').resize((300,300))
+        self.rocket= ImageTk.PhotoImage(self.rocket)
+        Label(self.upload,image=self.rocket).pack()
+        #upload
+        self.file_upload_frame=LabelFrame(self.upload,text="Upload File",padx=8,pady=4)
+        self.file_upload_frame.pack()
+        self.upload_icon=Image.open(r"MY_PACKAGE\Images\upload.png")
+        self.upload_icon=ImageTk.PhotoImage(self.upload_icon.resize((50,50)))
+        Label(self.file_upload_frame,image=self.upload_icon).pack(side=LEFT)
+        self.file_directory=ttk.Entry(self.file_upload_frame,width=50,textvariable=self.upload_var)
+        self.file_directory.pack(side=LEFT)
+        self.browse_file=ttk.Button(self.file_upload_frame,text="Browse",command=self.browse)
+        self.browse_file.pack(side=LEFT,padx=5)
+        self.upload_file=ttk.Button(self.file_upload_frame,text="Upload")
+        self.upload_file.pack(side=LEFT)
         
+        #download
+        self.file_download_frame=LabelFrame(self.upload,text="Download File",padx=4,pady=4)
+        self.file_download_frame.pack(pady=50)
+        self.download_icon= Image.open(r'MY_PACKAGE\Images\download.png').resize((50,50))
+        self.download_icon= ImageTk.PhotoImage(self.download_icon)
+        Label(self.file_download_frame,image=self.download_icon).pack(side=LEFT)
+        self.file_view=ttk.Combobox(self.file_download_frame,width=50)
+        self.file_view.pack(side=LEFT)
+        self.download_file=ttk.Button(self.file_download_frame,text="Download")
+        self.download_file.pack(side=LEFT,padx=5)
+        
+    
+    def browse(self):
+        file_types=[ ("Word file",".docx") ]
+        location = filedialog.askopenfilename(initialdir="Your Projects",title="Select file",filetypes=file_types)
+        self.upload_var.set(location)
+    
+    def upload(self):
+        data={
+            "email":self.email,
+            file
+        }
+        if self.upload_var.get().strip()!="":
+            pass
     def search_project_initialiser(self,var):
         project_to_be_automated=var.get().strip()
         try:
