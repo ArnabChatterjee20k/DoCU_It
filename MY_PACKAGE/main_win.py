@@ -3,19 +3,24 @@ from tkinter import ttk,messagebox,colorchooser,filedialog
 from PIL import Image,ImageTk
 import threading as td
 import requests
-# from MY_PACKAGE.project_parser import Parser#when calling this whole main_win as a module
-from project_parser import Parser #when we will use this main_win as an application
+from MY_PACKAGE.project_parser import Parser#when calling this whole main_win as a module
+# from project_parser import Parser #when we will use this main_win as an application
 
 
 class LogIn(Toplevel):
     max_height=1500
     max_width=700
     primary_color="#091353"
+
     def __init__(self,email=None):
+        
         super().__init__()
+
         self.email=email#for verfication and connecting to server
+        
         self.geometry(f"{self.max_height}x{self.max_width}")
-        self.title("DOCU_It")
+        self.name="DoCu_It"
+        self.title(self.name)
         self.resizable(0,0)
         self.any_project=False#needs to be false. Used for enabling options and disabling options if nothing project is searched
         # self.any_project=True#needs to be false
@@ -28,6 +33,7 @@ class LogIn(Toplevel):
         # text var
         self.search_var=StringVar()
         self.upload_var=StringVar()
+        
 
         # Image frame
         self.img=Image.open("MY_PACKAGE\Images\icon.ico")
@@ -98,7 +104,7 @@ class LogIn(Toplevel):
         self.file_directory.pack(side=LEFT)
         self.browse_file=ttk.Button(self.file_upload_frame,text="Browse",command=self.browse)
         self.browse_file.pack(side=LEFT,padx=5)
-        self.upload_file=ttk.Button(self.file_upload_frame,text="Upload")
+        self.upload_file=ttk.Button(self.file_upload_frame,text="Upload",command=self.upload_file)
         self.upload_file.pack(side=LEFT)
         
         #download
@@ -109,22 +115,80 @@ class LogIn(Toplevel):
         Label(self.file_download_frame,image=self.download_icon).pack(side=LEFT)
         self.file_view=ttk.Combobox(self.file_download_frame,width=50)
         self.file_view.pack(side=LEFT)
-        self.download_file=ttk.Button(self.file_download_frame,text="Download")
+        self.download_file=ttk.Button(self.file_download_frame,text="Download",command=self.download_file)
         self.download_file.pack(side=LEFT,padx=5)
         
-    
+        self.download_file_options()
+        
+        
+        
+
+    def download_file_options(self):
+        def process():
+            uploded_file_link="http://127.0.0.1:5000/allfile"
+            try:
+                file_response= requests.post(uploded_file_link,data={"email":self.email})
+                actual_data=file_response.json()
+                data=[]
+                for i in actual_data:
+                    data.append(actual_data[i])
+                self.uploaded_file_server=data
+                self.file_view["values"]=data
+                self.file_view.update()
+            except:
+                data=None
+                self.file_view["values"]=tuple(data)
+                self.file_view.update()
+            
+        thread=td.Thread(target=process,daemon=True)
+        thread.start()
     def browse(self):
         file_types=[ ("Word file",".docx") ]
         location = filedialog.askopenfilename(initialdir="Your Projects",title="Select file",filetypes=file_types)
         self.upload_var.set(location)
     
-    def upload(self):
-        data={
-            "email":self.email,
-            file
-        }
-        if self.upload_var.get().strip()!="":
-            pass
+    def upload_file(self):
+        def process():
+            if self.upload_var.get().strip()!="":
+                try:
+                    file_content=open(self.upload_var.get(),"rb")
+                except:
+                    messagebox.showerror(self.name,"Plz check the file location. Some error occured")
+                data={
+                    "email":self.email,
+                }
+                file={
+                    "upload":file_content
+                }
+                link="http://127.0.0.1:5000/upload"
+                res=requests.post(link,data=data,files=file)
+                messagebox.showinfo(self.name,res.text)
+                file_content.close()
+                self.download_file_options()
+            else:
+                messagebox.showwarning(self.name,"Plz select a file")
+        thread=td.Thread(target=process)
+        thread.daemon=True  
+        thread.start()
+
+    def download_file(self):
+        def process():
+            req_file=self.file_view.get()
+            if req_file.strip()!="":
+                data={
+                    "email":self.email,
+                    "file":req_file
+                }
+                link="http://127.0.0.1:5000/download"
+                res=requests.post(link,data=data)
+                with open(fr"Your Projects\files from docuit server\{req_file}","wb") as f:
+                        f.write(res.content)
+                messagebox.showinfo(self.name,"Downloaded")
+        thread=td.Thread(target=process)
+        thread.daemon=True  
+        thread.start()
+
+        
     def search_project_initialiser(self,var):
         project_to_be_automated=var.get().strip()
         try:
@@ -163,9 +227,9 @@ class LogIn(Toplevel):
     def save_project(self):
         try:
             Parser.save_docx(self.proj_title,collection_paragraphs=self.docx_save,colors=self.color_choice)
-            messagebox.showinfo(self.title,f"Saved {self.proj_title}.docx")
+            messagebox.showinfo(self.name,f"Saved {self.proj_title}.docx")
         except Exception as e:
-            messagebox.showerror(self.title,f"Fail to save {self.proj_title}.docx")
+            messagebox.showerror(self.name,f"Fail to save {self.proj_title}.docx")
             print(e)
 
     def open_modal(self):
@@ -239,11 +303,6 @@ class LogIn(Toplevel):
     
         
 if __name__=="__main__":##to execute the file when it will be running as program not as a module 
-    a=LogIn()
-    # style=ttk.Style()
-    # style.theme_use('alt')
-    # print(style.theme_names())
+    a=LogIn(email="arna")
     a.mainloop()
-    # print(a.project_data_encoded)
     print(a.color_choice)
-    # print(a.proj_title)

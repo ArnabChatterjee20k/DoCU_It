@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from io import BytesIO
+from json import JSONEncoder
 app=Flask(__name__)
 # DATABASE configurations
 DB_NAME="DATABASE\DOCu_It.db"
@@ -24,7 +25,6 @@ class ProjectFile(db.Model):
     file=db.Column(db.LargeBinary)
     person_email = db.Column(db.String(100),db.ForeignKey("user.email"))
 
-# since we have to send serializable object so this will help us.
 
 # endpoints and routes
 @app.route("/register",methods=["POST"])
@@ -78,6 +78,18 @@ def download():
         return send_file(BytesIO(user_file.file),attachment_filename=user_file.filename)
     else:
         return "not found",404
+
+@app.route("/allfile",methods=["POST"])
+def files():
+    """to send a json object containing all filenames of a particulat email"""
+    email=request.form["email"]
+    data=ProjectFile.query.filter_by(person_email=email).all()
+    filename_list={}
+    for i in range(len(data)):
+        filename_list[i]=data[i].filename
+    return jsonify(filename_list)
+    
+
 if __name__=="__main__":
-    db.create_all()
     app.run(debug=True)
+

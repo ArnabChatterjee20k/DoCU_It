@@ -1,3 +1,4 @@
+import re
 from MY_PACKAGE.main_win import LogIn
 from tkinter import *
 from tkinter import ttk,messagebox
@@ -13,6 +14,7 @@ window.title(title)
 # server link
 server_link_register="http://127.0.0.1:5000/register"
 server_link_login="http://127.0.0.1:5000/login"
+server_link_filelist="http://127.0.0.1:5000/allfile"
 
 # text variables
 email=StringVar()
@@ -82,7 +84,8 @@ def login_init():
             messagebox.showinfo("DoCu_It",status["message"])
             if status.get("user") and restrict==0:#as it does not stop the code if key not found
                 try:
-                    main=LogIn()
+                    credential=data["email"]
+                    main=LogIn(email=credential)
                     restrict=1
                     window.wm_state('iconic')
                     main.protocol("WM_DELETE_WINDOW",on_close)
